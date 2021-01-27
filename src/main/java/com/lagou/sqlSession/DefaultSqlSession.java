@@ -3,8 +3,8 @@ package com.lagou.sqlSession;
 import com.lagou.domain.Configuration;
 import com.lagou.domain.MappedStatement;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
+import java.beans.IntrospectionException;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -24,13 +24,22 @@ public class DefaultSqlSession implements SqlSession {
 
     @Override
     public <T> List<T> selectList(String statementId, Object... params) {
-        DataSource dataSource = configuration.getDataSource();
         MappedStatement mappedStatement = configuration.getStatementMap().get(statementId);
 
         try {
-            sqlExecutor.query(configuration, mappedStatement, params);
+            return sqlExecutor.query(configuration, mappedStatement, params);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (IntrospectionException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
         }
 
         return null;
@@ -38,6 +47,16 @@ public class DefaultSqlSession implements SqlSession {
 
     @Override
     public <T> T selectOne(String statementId, Object... params) {
-        return null;
+
+        List<Object> objects = selectList(statementId, params);
+        if (objects == null || objects.size() == 0) {
+            return null;
+        }
+
+        if (objects.size() != 1) {
+            throw new IllegalStateException("result not only one");
+        }
+
+        return (T) objects.get(0);
     }
 }

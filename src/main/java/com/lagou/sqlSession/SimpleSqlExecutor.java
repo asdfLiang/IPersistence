@@ -24,7 +24,7 @@ import java.util.List;
 public class SimpleSqlExecutor implements SqlExecutor {
 
     @Override
-    public <T> List<T> query(Configuration configuration, MappedStatement mappedStatement, Object param)
+    public <T> List<T> query(Configuration configuration, MappedStatement mappedStatement, Object... param)
             throws SQLException, NoSuchFieldException, IllegalAccessException, InstantiationException,
             IntrospectionException, InvocationTargetException {
         DataSource dataSource = configuration.getDataSource();
@@ -37,8 +37,10 @@ public class SimpleSqlExecutor implements SqlExecutor {
         // 获取预处理对象
         PreparedStatement preparedStatement = connection.prepareStatement(boundSql.getSqlText());
 
-        // 设置参数
-        setSqlParam(preparedStatement, param, boundSql.getParameterMappings());
+        // 设置参数(如果有)
+        if (param != null && param.length > 0) {
+            setSqlParam(preparedStatement, param[0], boundSql.getParameterMappings());
+        }
 
         // 执行sql
         ResultSet resultSet = preparedStatement.executeQuery();
@@ -48,6 +50,19 @@ public class SimpleSqlExecutor implements SqlExecutor {
 
     }
 
+    /**
+     * 结果转换
+     *
+     * @param resultSet
+     * @param resultTypeClass
+     * @param <T>
+     * @return
+     * @throws SQLException
+     * @throws IllegalAccessException
+     * @throws InstantiationException
+     * @throws IntrospectionException
+     * @throws InvocationTargetException
+     */
     private <T> List<T> transferResult(ResultSet resultSet, Class<?> resultTypeClass)
             throws SQLException, IllegalAccessException, InstantiationException, IntrospectionException, InvocationTargetException {
 
@@ -57,7 +72,7 @@ public class SimpleSqlExecutor implements SqlExecutor {
             int columnCount = metaData.getColumnCount();
 
             T t = (T) resultTypeClass.newInstance();
-            for (int i = 0; i < columnCount; i++) {
+            for (int i = 1; i <= columnCount; i++) {
                 String columnName = metaData.getColumnName(i);
                 Object columnValue = resultSet.getObject(columnName);
 
@@ -70,9 +85,19 @@ public class SimpleSqlExecutor implements SqlExecutor {
             results.add(t);
         }
 
-        return null;
+        return results;
     }
 
+    /**
+     * 设置sql参数
+     *
+     * @param preparedStatement
+     * @param param
+     * @param parameterMappings
+     * @throws NoSuchFieldException
+     * @throws IllegalAccessException
+     * @throws SQLException
+     */
     private void setSqlParam(PreparedStatement preparedStatement, Object param, List<ParameterMapping> parameterMappings)
             throws NoSuchFieldException, IllegalAccessException, SQLException {
 
