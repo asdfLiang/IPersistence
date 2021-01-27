@@ -3,6 +3,7 @@ package com.lagou.config;
 import com.lagou.domain.Configuration;
 import com.lagou.domain.MappedStatement;
 import com.lagou.io.Resources;
+import com.lagou.utils.StringUtil;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
@@ -130,8 +131,8 @@ public class XmlMappedStatementMapBuilder {
                 String resultTypeName = sqlElement.attributeValue("resultType");
                 String sql = sqlElement.getTextTrim();
                 String statementId = namespace + "." + id;
-                Class<?> parameterType = Class.forName(parameterTypeName);
-                Class<?> resultType = Class.forName(resultTypeName);
+                Class<?> parameterType = StringUtil.isEmpty(parameterTypeName) ? null : Class.forName(parameterTypeName);
+                Class<?> resultType = StringUtil.isEmpty(resultTypeName) ? null : Class.forName(resultTypeName);
 
                 MappedStatement mappedStatement = new MappedStatement();
                 mappedStatement.setStatementId(statementId);
