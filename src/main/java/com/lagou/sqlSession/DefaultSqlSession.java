@@ -4,7 +4,7 @@ import com.lagou.domain.Configuration;
 import com.lagou.domain.MappedStatement;
 
 import java.beans.IntrospectionException;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.*;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -58,5 +58,28 @@ public class DefaultSqlSession implements SqlSession {
         }
 
         return (T) objects.get(0);
+    }
+
+    @Override
+    public <T> T getMapper(Class<T> clazz) {
+
+        Object proxyInstance = Proxy.newProxyInstance(DefaultSqlSession.class.getClassLoader(), new Class[]{clazz}, new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                String methodName = method.getName();
+                String className = method.getDeclaringClass().getName();
+                String statementId = className + "." + methodName;
+
+                Type genericReturnType = method.getGenericReturnType();
+
+                if (genericReturnType instanceof ParameterizedType) {
+                    return selectList(statementId);
+                }
+
+                return selectOne(statementId, args);
+            }
+        });
+
+        return (T) proxyInstance;
     }
 }
