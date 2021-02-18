@@ -27,6 +27,40 @@ public class SimpleSqlExecutor implements SqlExecutor {
     public <T> List<T> query(Configuration configuration, MappedStatement mappedStatement, Object... param)
             throws SQLException, NoSuchFieldException, IllegalAccessException, InstantiationException,
             IntrospectionException, InvocationTargetException {
+        // 获取预处理对象
+        PreparedStatement preparedStatement = getPreparedStatement(configuration, mappedStatement, param);
+
+        // 执行sql
+        ResultSet resultSet = preparedStatement.executeQuery();
+
+        // 转换结果并返回
+        return transferResult(resultSet, mappedStatement.getResultType());
+
+    }
+
+    @Override
+    public Integer update(Configuration configuration, MappedStatement mappedStatement, Object... param) throws SQLException, NoSuchFieldException, IllegalAccessException {
+        // 获取预处理对象
+        PreparedStatement preparedStatement = getPreparedStatement(configuration, mappedStatement, param);
+
+        // 执行sql
+        int updateLineNum = preparedStatement.executeUpdate();
+
+        return updateLineNum;
+    }
+
+    /**
+     * 获取预处理对象，解析sql并设置参数
+     *
+     * @param configuration
+     * @param mappedStatement
+     * @param param
+     * @return
+     * @throws SQLException
+     * @throws NoSuchFieldException
+     * @throws IllegalAccessException
+     */
+    private PreparedStatement getPreparedStatement(Configuration configuration, MappedStatement mappedStatement, Object[] param) throws SQLException, NoSuchFieldException, IllegalAccessException {
         DataSource dataSource = configuration.getDataSource();
         // 获取连接
         Connection connection = dataSource.getConnection();
@@ -41,13 +75,7 @@ public class SimpleSqlExecutor implements SqlExecutor {
         if (param != null && param.length > 0) {
             setSqlParam(preparedStatement, param[0], boundSql.getParameterMappings());
         }
-
-        // 执行sql
-        ResultSet resultSet = preparedStatement.executeQuery();
-
-        // 转换结果并返回
-        return transferResult(resultSet, mappedStatement.getResultType());
-
+        return preparedStatement;
     }
 
     /**

@@ -12,5 +12,11 @@ public interface SqlSession {
 
     <T> T selectOne(String statementId, Object... params);
 
+    Integer insert(String statementId, Object... params);
+
+    Integer update(String statementId, Object... params);
+
+    Integer delete(String statementId, Object... params);
+
     <T> T getMapper(Class<T> clazz);
 }

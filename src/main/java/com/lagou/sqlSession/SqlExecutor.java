@@ -16,4 +16,6 @@ public interface SqlExecutor {
 
     <T> List<T> query(Configuration configuration, MappedStatement mappedStatement, Object... param) throws SQLException, NoSuchFieldException, IllegalAccessException, InstantiationException, IntrospectionException, InvocationTargetException;
 
+    Integer update(Configuration configuration, MappedStatement mappedStatement, Object... param) throws SQLException, NoSuchFieldException, IllegalAccessException, InstantiationException, IntrospectionException, InvocationTargetException;
+
 }

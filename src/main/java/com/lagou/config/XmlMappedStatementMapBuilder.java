@@ -2,6 +2,7 @@ package com.lagou.config;
 
 import com.lagou.domain.Configuration;
 import com.lagou.domain.MappedStatement;
+import com.lagou.enums.SqlCommandType;
 import com.lagou.io.Resources;
 import com.lagou.utils.StringUtil;
 import org.dom4j.Document;
@@ -122,14 +123,15 @@ public class XmlMappedStatementMapBuilder {
         private List<MappedStatement> buildByElementName(String sqlElementName, Element mapperRootElement) throws ClassNotFoundException {
             // xml文件获取
             String namespace = mapperRootElement.attributeValue("namespace");
-            List<Element> selectElements = mapperRootElement.selectNodes(sqlElementName);
+            List<Element> sqlElements = mapperRootElement.selectNodes(sqlElementName);
 
             List<MappedStatement> mappedStatements = new LinkedList<>();
-            for (Element sqlElement : selectElements) {
+            for (Element sqlElement : sqlElements) {
                 String id = sqlElement.attributeValue("id");
                 String parameterTypeName = sqlElement.attributeValue("parameterType");
                 String resultTypeName = sqlElement.attributeValue("resultType");
                 String sql = sqlElement.getTextTrim();
+
                 String statementId = namespace + "." + id;
                 Class<?> parameterType = StringUtil.isEmpty(parameterTypeName) ? null : Class.forName(parameterTypeName);
                 Class<?> resultType = StringUtil.isEmpty(resultTypeName) ? null : Class.forName(resultTypeName);
@@ -139,10 +141,28 @@ public class XmlMappedStatementMapBuilder {
                 mappedStatement.setParameterType(parameterType);
                 mappedStatement.setResultType(resultType);
                 mappedStatement.setSql(sql);
+                mappedStatement.setCommandType(getCommandTypeByName(sqlElement.getName()));
                 mappedStatements.add(mappedStatement);
             }
 
             return mappedStatements;
+        }
+
+        private SqlCommandType getCommandTypeByName(String elementName) {
+            switch (elementName) {
+                case "select":
+                    return SqlCommandType.SELECT;
+                case "insert":
+                    return SqlCommandType.INSERT;
+                case "update":
+                    return SqlCommandType.UPDATE;
+                case "delete":
+                    return SqlCommandType.DELETE;
+                default:
+                    throw new IllegalArgumentException("element name error");
+
+            }
+
         }
     }
 }

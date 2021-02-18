@@ -28,8 +28,8 @@ public class DefaultSqlSession implements SqlSession {
 
         try {
             return sqlExecutor.query(configuration, mappedStatement, params);
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        } catch (SQLException throwable) {
+            throwable.printStackTrace();
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (InvocationTargetException e) {
@@ -61,6 +61,37 @@ public class DefaultSqlSession implements SqlSession {
     }
 
     @Override
+    public Integer insert(String statementId, Object... params) {
+        return update(statementId, params);
+    }
+
+    @Override
+    public Integer update(String statementId, Object... params) {
+        MappedStatement mappedStatement = configuration.getStatementMap().get(statementId);
+        try {
+            return sqlExecutor.update(configuration, mappedStatement, params);
+        } catch (SQLException throwable) {
+            throwable.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (IntrospectionException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @Override
+    public Integer delete(String statementId, Object... params) {
+        return update(statementId, params);
+    }
+
+    @Override
     public <T> T getMapper(Class<T> clazz) {
 
         Object proxyInstance = Proxy.newProxyInstance(DefaultSqlSession.class.getClassLoader(), new Class[]{clazz}, new InvocationHandler() {
@@ -70,13 +101,25 @@ public class DefaultSqlSession implements SqlSession {
                 String className = method.getDeclaringClass().getName();
                 String statementId = className + "." + methodName;
 
-                Type genericReturnType = method.getGenericReturnType();
+                MappedStatement mappedStatement = configuration.getStatementMap().get(statementId);
 
-                if (genericReturnType instanceof ParameterizedType) {
-                    return selectList(statementId);
+                switch (mappedStatement.getCommandType()) {
+                    case SELECT: {
+                        Type genericReturnType = method.getGenericReturnType();
+                        if (genericReturnType instanceof ParameterizedType) {
+                            return selectList(statementId, args);
+                        }
+                        return selectOne(statementId, args);
+                    }
+                    case INSERT:
+                        return insert(statementId, args);
+                    case UPDATE:
+                        return update(statementId, args);
+                    case DELETE:
+                        return delete(statementId, args);
+                    default:
+                        throw new IllegalArgumentException("unknown command type");
                 }
-
-                return selectOne(statementId, args);
             }
         });
 
